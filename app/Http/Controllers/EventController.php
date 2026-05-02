@@ -22,7 +22,7 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
+        $validator = Validator::make($request->all(), [
             'organizer_id' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -35,9 +35,21 @@ class EventController extends Controller
             'registration_deadline' => 'nullable|date|before_or_equal:start_date',
         ]);
 
-        $event = Event::create($validatedData);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal', 
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-        return response()->json($event, 201);
+        $event = Event::create($validator->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Event berhasil dibuat',
+            'data' => $event
+        ], 201);
     }
 
     /**
@@ -48,10 +60,17 @@ class EventController extends Controller
         $event = Event::find($id);
 
         if (!$event) {
-            return response()->json(['message' => 'Event not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found'
+            ], 404);
         }
 
-        return response()->json($event);
+        return response()->json([
+            'success' => true,
+            'message' => 'Event ditemukan',
+            'data' => $event
+        ]);
     }
 
     /**
@@ -62,25 +81,40 @@ class EventController extends Controller
         $event = Event::find($id);
 
         if (!$event) {
-            return response()->json(['message' => 'Event not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found'
+            ], 404);
         }
 
-        $validatedData = $request->validate([
-            'organizer_id' => 'sometimes|exists:users,id',
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'start_date' => 'sometimes|date',
-            'end_date' => 'sometimes|date|after_or_equal:start_date',
-            'location' => 'sometimes|string|max:255',
+        $validator = Validator::make($request->all(), [
+            'organizer_id' => 'required|exists:users,id',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'location' => 'required|string|max:255',
             'max_participants' => 'nullable|integer|min:1',
             'registration_fee' => 'nullable|numeric|min:0',
             'registration_open' => 'boolean',
             'registration_deadline' => 'nullable|date|before_or_equal:start_date',
         ]);
 
-        $event->update($validatedData);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-        return response()->json($event);
+        $event->update($validator->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Event berhasil diupdate',
+            'data' => $event
+        ]);
     }
 
     /**
@@ -91,11 +125,17 @@ class EventController extends Controller
         $event = Event::find($id);
 
         if (!$event) {
-            return response()->json(['message' => 'Event not found'], 404);
+            return response()->json([   
+                'success' => false,
+                'message' => 'Event not found'
+            ], 404);
         }
 
         $event->delete();
 
-        return response()->json(['message' => 'Event deleted successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Event berhasil dihapus'
+        ]);
     }
 }
