@@ -26,13 +26,11 @@ class PermissionSeeder extends Seeder
         $userRole = Role::create(['name' => 'user']);
 
         // Events Table Permissions
-        Permission::create(['name' => 'view events']);
         Permission::create(['name' => 'create events']);
         Permission::create(['name' => 'update events']);
         Permission::create(['name' => 'delete events']);
 
         // Category Table Permissions
-        Permission::create(['name' => 'view categories']);
         Permission::create(['name' => 'create categories']);
         Permission::create(['name' => 'update categories']);
         Permission::create(['name' => 'delete categories']);
@@ -49,7 +47,6 @@ class PermissionSeeder extends Seeder
         // Assign Organizer Permissions
         $organizerRole->givePermissionTo([
             // Events
-            'view events',
             'create events',
             'update events',
             'delete events',
@@ -57,11 +54,7 @@ class PermissionSeeder extends Seeder
 
         // Assign User Permissions
         $userRole->givePermissionTo([
-            // Events
-            'view events',
-
-            // Categories
-            'view categories',
+            // None yet
         ]);
     }
 }
