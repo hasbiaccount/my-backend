@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\EventController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -32,4 +33,18 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update categories');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])
         ->middleware('permission:delete categories');
+});
+
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/{event}', [EventController::class, 'show']);
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/events', [EventController::class, 'store'])
+        ->middleware('permission:create events');
+    Route::put('/events/{event}', [EventController::class, 'update'])
+        ->middleware('permission:update events');
+    Route::patch('/events/{event}', [EventController::class, 'update'])
+        ->middleware('permission:update events');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])
+        ->middleware('permission:delete events');
 });

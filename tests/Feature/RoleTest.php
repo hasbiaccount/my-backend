@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\UserSeeder;
 
 beforeEach(function () {
     $this->seed([
