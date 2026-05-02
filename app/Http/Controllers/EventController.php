@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
@@ -34,7 +35,6 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'organizer_id' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'start_date' => 'required|date',
@@ -42,7 +42,7 @@ class EventController extends Controller
             'location' => 'required|string|max:255',
             'max_participants' => 'nullable|integer|min:1',
             'registration_fee' => 'nullable|numeric|min:0',
-            'registration_open' => 'boolean',
+            'registration_open' => 'nullable|date|after_or_equal:today',
             'registration_deadline' => 'nullable|date|before_or_equal:start_date',
         ]);
 
@@ -54,7 +54,10 @@ class EventController extends Controller
             ], 422);
         }
 
-        $event = Event::create($validator->validated());
+        $event = Event::create([
+            'organizer_id' => auth()->user()->id,
+            ...$validator->validated()
+        ]);
 
         return response()->json([
             'success' => true,
@@ -99,16 +102,15 @@ class EventController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'organizer_id' => 'required|exists:users,id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'location' => 'required|string|max:255',
-            'max_participants' => 'nullable|integer|min:1',
-            'registration_fee' => 'nullable|numeric|min:0',
-            'registration_open' => 'boolean',
-            'registration_deadline' => 'nullable|date|before_or_equal:start_date',
+            'title' => 'string|max:255',
+            'description' => 'string',
+            'start_date' => 'date',
+            'end_date' => 'date|after_or_equal:start_date',
+            'location' => 'string|max:255',
+            'max_participants' => 'integer|min:1',
+            'registration_fee' => 'numeric|min:0',
+            'registration_open' => 'date|after_or_equal:today',
+            'registration_deadline' => 'date|before_or_equal:start_date',
         ]);
 
         if ($validator->fails()) {
@@ -119,12 +121,15 @@ class EventController extends Controller
             ], 422);
         }
 
+        $previousData = $event->replicate();
+
         $event->update($validator->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Event berhasil diupdate',
-            'data' => $event
+            'data' => $event,
+            'old_data' => $previousData
         ]);
     }
 
