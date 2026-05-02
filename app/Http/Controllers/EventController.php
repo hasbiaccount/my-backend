@@ -13,8 +13,19 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::all();
-        
-        return response()->json($events);
+
+        if (!$events) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Event ditemukan',
+            'data' => $events
+        ]);
     }
 
     /**
