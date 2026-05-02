@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\ImageController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -37,6 +38,7 @@ Route::middleware('auth:api')->group(function () {
 
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{event}', [EventController::class, 'show']);
+Route::get('/events/{event}/images', [EventController::class, 'getImages']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/events', [EventController::class, 'store'])
@@ -47,4 +49,14 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update events');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])
         ->middleware('permission:delete events');
+});
+
+// Image related routes
+Route::get('/images/{image}', [ImageController::class, 'index']);
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/events/{event}/image', [ImageController::class, 'upload'])
+        ->middleware('permission:update events');
+    Route::delete('/images/{image}', [ImageController::class, 'destroy'])
+        ->middleware('permission:update events');
 });

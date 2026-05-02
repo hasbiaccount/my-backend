@@ -154,4 +154,34 @@ class EventController extends Controller
             'message' => 'Event berhasil dihapus'
         ]);
     }
+
+    /**
+     * Get image list from the event id
+     */
+    public function getImages(string $id)
+    {
+        $event = Event::find($id);
+
+        if (!$event) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found'
+            ], 404);
+        }
+
+        $images = $event->images()->get();
+
+        if ($images->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Images not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Images found',
+            'images' => $images
+        ]);
+    }
 }
