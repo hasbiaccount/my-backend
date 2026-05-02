@@ -8,7 +8,7 @@
 4. Copy `.env.example` to `.env`
 5. Run `php artisan key:generate`
 6. Run `php artisan jwt:secret`
-7. Run `php artisan migrate`
+7. Run `php artisan migrate --seed`
 
 ## Third Party Dependencies
 
