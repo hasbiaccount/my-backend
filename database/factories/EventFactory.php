@@ -26,8 +26,8 @@ class EventFactory extends Factory
             'location' => fake()->city(),
             'max_participants' => fake()->numberBetween(10, 1000),
             'registration_fee' => fake()->numberBetween(2000, 100000),
-            'registration_open' => fake()->boolean(),
-            'registration_deadline' => fake()->dateTimeBetween('+1 day', '+1 year'),
+            'registration_open' => fake()->dateTimeBetween('-1 year', 'now'),
+            'registration_deadline' => fake()->dateTimeBetween('now', '+1 year'),
         ];
     }
 }
