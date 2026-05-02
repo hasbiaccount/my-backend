@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ImageController extends Controller
 {
-    public function index(string $id) {
+    public function show(string $id) {
         $image = Image::where('id', $id)->first();
         
         if (!$image) {
@@ -18,7 +18,7 @@ class ImageController extends Controller
                 'message' => 'Image not found'
             ], 404);
         }
-        
+
         $path = storage_path('app/public/' . $image->path);
         
         if (!file_exists($path)) {

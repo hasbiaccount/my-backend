@@ -52,7 +52,7 @@ Route::middleware('auth:api')->group(function () {
 });
 
 // Image related routes
-Route::get('/images/{image}', [ImageController::class, 'index']);
+Route::get('/images/{image}', [ImageController::class, 'show']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/events/{event}/image', [ImageController::class, 'upload'])
