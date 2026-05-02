@@ -14,7 +14,7 @@ class EventController extends Controller
     {
         $events = Event::all();
 
-        if (!$events) {
+        if (!$events || $events->isEmpty()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Event not found'
