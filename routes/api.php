@@ -59,4 +59,6 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update events');
     Route::delete('/images/{image}', [ImageController::class, 'destroy'])
         ->middleware('permission:update events');
+
+    Route::apiResource('cart-acara', \App\Http\Controllers\CartAcaraController::class)->except(['show']);
 });
