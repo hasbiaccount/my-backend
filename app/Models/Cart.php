@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['user_id', 'event_id', 'quantity'])]
-class CartAcara extends Model
+class Cart extends Model
 {
     public function user(): BelongsTo
     {

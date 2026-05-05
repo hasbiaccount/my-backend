@@ -29,9 +29,11 @@ class EventSeeder extends Seeder
             return;
         }
 
-        // Create 5 events with random users with role 'organizer'
-        Event::factory(5)->create([
-            'organizer_id' => $users->random()->id,
-        ]);
+        // Create 50 events with random users with role 'organizer'
+        for ($i = 0; $i < 50; $i++) {
+            Event::factory()->create([
+                'organizer_id' => $users->random()->id,
+            ]);
+        }
     }
 }

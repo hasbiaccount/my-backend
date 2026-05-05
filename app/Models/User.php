@@ -54,9 +54,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Event::class, 'organizer_id');
     }
 
-    public function cartAcaras(): HasMany
+    public function carts(): HasMany
     {
-        return $this->hasMany(CartAcara::class);
+        return $this->hasMany(Cart::class);
     }
 
     public function participants(): HasMany
