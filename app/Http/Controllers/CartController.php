@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CartAcara;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class CartAcaraController extends Controller
+class CartController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $carts = $request->user()->cartAcaras()->with('event')->get();
+        $carts = $request->user()->carts()->with('event')->get();
 
         return response()->json([
             'success' => true,
@@ -42,13 +42,13 @@ class CartAcaraController extends Controller
 
         $user = $request->user();
         
-        $cart = $user->cartAcaras()->where('event_id', $request->event_id)->first();
+        $cart = $user->carts()->where('event_id', $request->event_id)->first();
 
         if ($cart) {
             $cart->quantity += $request->quantity;
             $cart->save();
         } else {
-            $cart = $user->cartAcaras()->create([
+            $cart = $user->carts()->create([
                 'event_id' => $request->event_id,
                 'quantity' => $request->quantity
             ]);
@@ -78,7 +78,7 @@ class CartAcaraController extends Controller
             ], 422);
         }
 
-        $cart = $request->user()->cartAcaras()->find($id);
+        $cart = $request->user()->carts()->find($id);
 
         if (!$cart) {
             return response()->json([
@@ -103,7 +103,7 @@ class CartAcaraController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        $cart = $request->user()->cartAcaras()->find($id);
+        $cart = $request->user()->carts()->find($id);
 
         if (!$cart) {
             return response()->json([
