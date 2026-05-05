@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
-            $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
+            $table->enum('status', ['registered', 'attended', 'absent'])->default('registered');
             $table->timestamps();
 
             $table->unique(['user_id', 'event_id']);

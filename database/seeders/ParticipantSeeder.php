@@ -30,7 +30,7 @@ class ParticipantSeeder extends Seeder
             $events->random(min(3, $events->count()))->each(function (Event $event) use ($user) {
                 $user->participants()->create([
                     'event_id' => $event->id,
-                    'status' => 'confirmed',
+                    'status' => 'registered',
                 ]);
             });
         }

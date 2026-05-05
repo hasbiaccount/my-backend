@@ -58,7 +58,7 @@ class EventParticipantController extends Controller
 
         $participant = $event->participants()->create([
             'user_id' => $user->id,
-            'status' => 'pending',
+            'status' => 'registered',
         ]);
 
         return response()->json([
@@ -94,7 +94,7 @@ class EventParticipantController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(['pending', 'confirmed', 'cancelled'])],
+            'status' => ['required', Rule::in(['registered', 'attended', 'absent'])],
         ]);
 
         $participant->update($validated);
