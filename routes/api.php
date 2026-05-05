@@ -55,7 +55,7 @@ Route::middleware('auth:api')->group(function () {
     // Event links
     Route::post('/events/{event}/links', [EventLinkController::class, 'store'])
         ->middleware('permission:update events');
-    Route::put('/events/{event}/links/{link}', [EventLinkController::class, 'update'])
+    Route::patch('/events/{event}/links/{link}', [EventLinkController::class, 'update'])
         ->middleware('permission:update events');
     Route::delete('/events/{event}/links/{link}', [EventLinkController::class, 'destroy'])
         ->middleware('permission:update events');
