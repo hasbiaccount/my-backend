@@ -8,7 +8,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventParticipantController;
 use App\Http\Controllers\EventLinkController;
 use App\Http\Controllers\ImageController;
-use App\Http\Controllers\CartAcaraController;
+use App\Http\Controllers\CartController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -74,11 +74,11 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update events');
 
     // Cart routes
-    Route::get('/carts', [CartAcaraController::class, 'index']);
-    Route::post('/carts', [CartAcaraController::class, 'store']);
-    Route::put('/carts/{cart}', [CartAcaraController::class, 'update']);
-    Route::patch('/carts/{cart}', [CartAcaraController::class, 'update']);
-    Route::delete('/carts/{cart}', [CartAcaraController::class, 'destroy']);
+    Route::get('/carts', [CartController::class, 'index']);
+    Route::post('/carts', [CartController::class, 'store']);
+    Route::put('/carts/{cart}', [CartController::class, 'update']);
+    Route::patch('/carts/{cart}', [CartController::class, 'update']);
+    Route::delete('/carts/{cart}', [CartController::class, 'destroy']);
 
     // Participant routes
     Route::get('/my-events', [EventParticipantController::class, 'myEvents']);
