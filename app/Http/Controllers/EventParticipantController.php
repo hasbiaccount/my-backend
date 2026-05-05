@@ -97,6 +97,22 @@ class EventParticipantController extends Controller
             'status' => ['required', Rule::in(['registered', 'attended', 'absent'])],
         ]);
 
+        $allowedTransitions = [
+            'registered' => ['attended', 'absent'],
+            'attended'   => [],
+            'absent'     => [],
+        ];
+
+        if (!in_array($validated['status'], $allowedTransitions[$participant->status], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid participant status transition',
+                'errors' => [
+                    'status' => ['The selected status is invalid for the participant\'s current state.'],
+                ],
+            ], 422);
+        }
+
         $participant->update($validated);
 
         return response()->json([
