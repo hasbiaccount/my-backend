@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventParticipantController;
 use App\Http\Controllers\EventLinkController;
 use App\Http\Controllers\ImageController;
 
@@ -71,4 +72,17 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update events');
 
     Route::apiResource('cart-acara', \App\Http\Controllers\CartAcaraController::class)->except(['show']);
+
+    // Participant routes
+    Route::get('/my-events', [EventParticipantController::class, 'myEvents']);
+    Route::post('/events/{event}/enroll', [EventParticipantController::class, 'store'])
+        ->middleware('permission:enroll events');
+    Route::delete('/events/{event}/enroll', [EventParticipantController::class, 'destroy'])
+        ->middleware('permission:enroll events');
+    Route::get('/events/{event}/participants', [EventParticipantController::class, 'index'])
+        ->middleware('permission:manage participants');
+    Route::get('/events/{event}/participants/{participant}', [EventParticipantController::class, 'show'])
+        ->middleware('permission:manage participants');
+    Route::patch('/events/{event}/participants/{participant}', [EventParticipantController::class, 'update'])
+        ->middleware('permission:manage participants');
 });
