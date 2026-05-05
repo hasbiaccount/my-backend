@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\CartAcara;
+use App\Models\Cart;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-class CartAcaraSeeder extends Seeder
+class CartSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -27,7 +27,7 @@ class CartAcaraSeeder extends Seeder
             $randomEvents = $events->random(min(rand(1, 3), $events->count()));
             
             foreach ($randomEvents as $event) {
-                CartAcara::create([
+                Cart::create([
                     'user_id' => $user->id,
                     'event_id' => $event->id,
                     'quantity' => rand(1, 3),
