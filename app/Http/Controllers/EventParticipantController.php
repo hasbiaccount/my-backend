@@ -3,21 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use App\Models\EventEnrollment;
+use App\Models\EventParticipant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class EventEnrollmentController extends Controller
+class EventParticipantController extends Controller
 {
     public function index(Event $event): JsonResponse
     {
-        $enrollments = $event->enrollments()->with('user')->get();
+        $participants = $event->participants()->with('user')->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'Enrollments retrieved successfully',
-            'data' => $enrollments,
+            'message' => 'Participants retrieved successfully',
+            'data' => $participants,
         ]);
     }
 
@@ -25,7 +25,7 @@ class EventEnrollmentController extends Controller
     {
         $user = $request->user();
 
-        if ($event->enrollments()->where('user_id', $user->id)->exists()) {
+        if ($event->participants()->where('user_id', $user->id)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are already enrolled in this event',
@@ -33,7 +33,7 @@ class EventEnrollmentController extends Controller
         }
 
         if ($event->max_participants > 0) {
-            $confirmed = $event->enrollments()->where('status', 'confirmed')->count();
+            $confirmed = $event->participants()->where('status', 'confirmed')->count();
             if ($confirmed >= $event->max_participants) {
                 return response()->json([
                     'success' => false,
@@ -56,7 +56,7 @@ class EventEnrollmentController extends Controller
             ], 422);
         }
 
-        $enrollment = $event->enrollments()->create([
+        $participant = $event->participants()->create([
             'user_id' => $user->id,
             'status' => 'pending',
         ]);
@@ -64,16 +64,32 @@ class EventEnrollmentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Successfully enrolled in event',
-            'data' => $enrollment,
+            'data' => $participant,
         ], 201);
     }
 
-    public function update(Request $request, Event $event, EventEnrollment $enrollment): JsonResponse
+    public function show(Event $event, EventParticipant $participant): JsonResponse
     {
-        if ($enrollment->event_id !== $event->id) {
+        if ($participant->event_id !== $event->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Enrollment not found',
+                'message' => 'Participant not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Participant retrieved successfully',
+            'data' => $participant->load('user'),
+        ]);
+    }
+
+    public function update(Request $request, Event $event, EventParticipant $participant): JsonResponse
+    {
+        if ($participant->event_id !== $event->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Participant not found',
             ], 404);
         }
 
@@ -81,27 +97,27 @@ class EventEnrollmentController extends Controller
             'status' => ['required', Rule::in(['pending', 'confirmed', 'cancelled'])],
         ]);
 
-        $enrollment->update($validated);
+        $participant->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Enrollment status updated successfully',
-            'data' => $enrollment,
+            'message' => 'Participant status updated successfully',
+            'data' => $participant,
         ]);
     }
 
     public function destroy(Request $request, Event $event): JsonResponse
     {
-        $enrollment = $event->enrollments()->where('user_id', $request->user()->id)->first();
+        $participant = $event->participants()->where('user_id', $request->user()->id)->first();
 
-        if (!$enrollment) {
+        if (!$participant) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are not enrolled in this event',
             ], 404);
         }
 
-        $enrollment->delete();
+        $participant->delete();
 
         return response()->json([
             'success' => true,
@@ -110,14 +126,14 @@ class EventEnrollmentController extends Controller
         ]);
     }
 
-    public function myEnrollments(Request $request): JsonResponse
+    public function myEvents(Request $request): JsonResponse
     {
-        $enrollments = $request->user()->enrollments()->with('event')->get();
+        $participants = $request->user()->participants()->with('event')->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'Enrollments retrieved successfully',
-            'data' => $enrollments,
+            'message' => 'Enrolled events retrieved successfully',
+            'data' => $participants,
         ]);
     }
 }

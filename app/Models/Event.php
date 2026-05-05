@@ -39,8 +39,8 @@ class Event extends Model
         return $this->hasMany(CartAcara::class);
     }
 
-    public function enrollments(): HasMany
+    public function participants(): HasMany
     {
-        return $this->hasMany(EventEnrollment::class);
+        return $this->hasMany(EventParticipant::class);
     }
 }

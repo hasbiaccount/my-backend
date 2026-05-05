@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['user_id', 'event_id', 'status'])]
-class EventEnrollment extends Model
+class EventParticipant extends Model
 {
     public function user(): BelongsTo
     {

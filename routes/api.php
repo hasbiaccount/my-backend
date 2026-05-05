@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
-use App\Http\Controllers\EventEnrollmentController;
+use App\Http\Controllers\EventParticipantController;
 use App\Http\Controllers\ImageController;
 
 // Route::get('/user', function (Request $request) {
@@ -63,14 +63,16 @@ Route::middleware('auth:api')->group(function () {
 
     Route::apiResource('cart-acara', \App\Http\Controllers\CartAcaraController::class)->except(['show']);
 
-    // Enrollment routes
-    Route::get('/enrollments', [EventEnrollmentController::class, 'myEnrollments']);
-    Route::post('/events/{event}/enroll', [EventEnrollmentController::class, 'store'])
+    // Participant routes
+    Route::get('/my-events', [EventParticipantController::class, 'myEvents']);
+    Route::post('/events/{event}/enroll', [EventParticipantController::class, 'store'])
         ->middleware('permission:enroll events');
-    Route::delete('/events/{event}/enroll', [EventEnrollmentController::class, 'destroy'])
+    Route::delete('/events/{event}/enroll', [EventParticipantController::class, 'destroy'])
         ->middleware('permission:enroll events');
-    Route::get('/events/{event}/enrollments', [EventEnrollmentController::class, 'index'])
+    Route::get('/events/{event}/participants', [EventParticipantController::class, 'index'])
         ->middleware('permission:manage enrollments');
-    Route::patch('/events/{event}/enrollments/{enrollment}', [EventEnrollmentController::class, 'update'])
+    Route::get('/events/{event}/participants/{participant}', [EventParticipantController::class, 'show'])
+        ->middleware('permission:manage enrollments');
+    Route::patch('/events/{event}/participants/{participant}', [EventParticipantController::class, 'update'])
         ->middleware('permission:manage enrollments');
 });
