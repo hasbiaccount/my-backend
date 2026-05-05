@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventParticipantController;
+use App\Http\Controllers\EventLinkController;
 use App\Http\Controllers\ImageController;
 
 // Route::get('/user', function (Request $request) {
@@ -40,6 +41,7 @@ Route::middleware('auth:api')->group(function () {
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{event}', [EventController::class, 'show']);
 Route::get('/events/{event}/images', [EventController::class, 'getImages']);
+Route::get('/events/{event}/links', [EventLinkController::class, 'index']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/events', [EventController::class, 'store'])
@@ -50,6 +52,14 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update events');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])
         ->middleware('permission:delete events');
+        
+    // Event links
+    Route::post('/events/{event}/links', [EventLinkController::class, 'store'])
+        ->middleware('permission:update events');
+    Route::patch('/events/{event}/links/{link}', [EventLinkController::class, 'update'])
+        ->middleware('permission:update events');
+    Route::delete('/events/{event}/links/{link}', [EventLinkController::class, 'destroy'])
+        ->middleware('permission:update events');
 });
 
 // Image related routes

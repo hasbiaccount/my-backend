@@ -43,4 +43,9 @@ class Event extends Model
     {
         return $this->hasMany(EventParticipant::class);
     }
+     
+    public function eventLinks(): HasMany
+    {
+        return $this->hasMany(EventLink::class);
+    }
 }
