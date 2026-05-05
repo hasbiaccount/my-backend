@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventEnrollmentController;
 use App\Http\Controllers\ImageController;
 
 // Route::get('/user', function (Request $request) {
@@ -61,4 +62,15 @@ Route::middleware('auth:api')->group(function () {
         ->middleware('permission:update events');
 
     Route::apiResource('cart-acara', \App\Http\Controllers\CartAcaraController::class)->except(['show']);
+
+    // Enrollment routes
+    Route::get('/enrollments', [EventEnrollmentController::class, 'myEnrollments']);
+    Route::post('/events/{event}/enroll', [EventEnrollmentController::class, 'store'])
+        ->middleware('permission:enroll events');
+    Route::delete('/events/{event}/enroll', [EventEnrollmentController::class, 'destroy'])
+        ->middleware('permission:enroll events');
+    Route::get('/events/{event}/enrollments', [EventEnrollmentController::class, 'index'])
+        ->middleware('permission:manage enrollments');
+    Route::patch('/events/{event}/enrollments/{enrollment}', [EventEnrollmentController::class, 'update'])
+        ->middleware('permission:manage enrollments');
 });

@@ -35,8 +35,9 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'update categories']);
         Permission::create(['name' => 'delete categories']);
 
-        // Other Table Permission
-        // [ HERE ]
+        // Enrollment Permissions
+        Permission::create(['name' => 'enroll events']);
+        Permission::create(['name' => 'manage enrollments']);
 
         // Reset Cached Permission AFTER Seeding (due to WithoutModelEvents Trait)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -46,15 +47,16 @@ class PermissionSeeder extends Seeder
         
         // Assign Organizer Permissions
         $organizerRole->givePermissionTo([
-            // Events
             'create events',
             'update events',
             'delete events',
+            'enroll events',
+            'manage enrollments',
         ]);
 
         // Assign User Permissions
         $userRole->givePermissionTo([
-            // None yet
+            'enroll events',
         ]);
     }
 }
