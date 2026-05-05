@@ -37,7 +37,7 @@ class PermissionSeeder extends Seeder
 
         // Enrollment Permissions
         Permission::create(['name' => 'enroll events']);
-        Permission::create(['name' => 'manage enrollments']);
+        Permission::create(['name' => 'manage participants']);
 
         // Reset Cached Permission AFTER Seeding (due to WithoutModelEvents Trait)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -51,7 +51,7 @@ class PermissionSeeder extends Seeder
             'update events',
             'delete events',
             'enroll events',
-            'manage enrollments',
+            'manage participants',
         ]);
 
         // Assign User Permissions

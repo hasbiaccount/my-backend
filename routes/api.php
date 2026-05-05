@@ -70,9 +70,9 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/events/{event}/enroll', [EventParticipantController::class, 'destroy'])
         ->middleware('permission:enroll events');
     Route::get('/events/{event}/participants', [EventParticipantController::class, 'index'])
-        ->middleware('permission:manage enrollments');
+        ->middleware('permission:manage participants');
     Route::get('/events/{event}/participants/{participant}', [EventParticipantController::class, 'show'])
-        ->middleware('permission:manage enrollments');
+        ->middleware('permission:manage participants');
     Route::patch('/events/{event}/participants/{participant}', [EventParticipantController::class, 'update'])
-        ->middleware('permission:manage enrollments');
+        ->middleware('permission:manage participants');
 });
