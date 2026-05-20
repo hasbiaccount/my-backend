@@ -11,7 +11,10 @@ class EventController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Event::query()->with(['organizer:id,name', 'category:id,name,slug']);
+        $query = Event::query()->with(['organizer:id,name', 'category:id,name,slug', 'images'])
+            ->withCount(['participants' => function ($q) {
+                $q->whereIn('status', ['registered', 'attended']);
+            }]);
 
         if ($categoryId = $request->query('category_id')) {
             $query->where('category_id', $categoryId);
@@ -30,7 +33,7 @@ class EventController extends Controller
 
     public function myOrganized(Request $request): JsonResponse
     {
-        $events = $request->user()->events()->with('category:id,name,slug')->latest()->get();
+        $events = $request->user()->events()->with(['category:id,name,slug', 'images'])->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -76,6 +79,10 @@ class EventController extends Controller
 
     public function show(Event $event): JsonResponse
     {
+        $event->loadCount(['participants' => function ($q) {
+            $q->whereIn('status', ['registered', 'attended']);
+        }]);
+
         return response()->json([
             'success' => true,
             'message' => 'Event retrieved successfully',

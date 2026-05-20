@@ -24,7 +24,6 @@ class PermissionSeeder extends Seeder
 
         // Roles
         $adminRole = Role::updateOrCreate(['name' => 'admin', 'guard_name' => $guard]);
-        $organizerRole = Role::updateOrCreate(['name' => 'organizer', 'guard_name' => $guard]);
         $userRole = Role::updateOrCreate(['name' => 'user', 'guard_name' => $guard]);
 
         $permissions = [
@@ -45,17 +44,8 @@ class PermissionSeeder extends Seeder
         // Reset Cached Permission AFTER Seeding (due to WithoutModelEvents Trait)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Assign Admin Permissions
+        // Assign Admin/Organizer Permissions
         $adminRole->syncPermissions($permissions);
-        
-        // Assign Organizer Permissions
-        $organizerRole->syncPermissions([
-            'create events',
-            'update events',
-            'delete events',
-            'enroll events',
-            'manage participants',
-        ]);
 
         // Assign User Permissions
         $userRole->syncPermissions([

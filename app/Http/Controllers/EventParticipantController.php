@@ -148,7 +148,7 @@ class EventParticipantController extends Controller
     {
         $participants = $request->user()
             ->participants()
-            ->with('event.category:id,name,slug')
+            ->with(['event.category:id,name,slug', 'event.images'])
             ->get();
 
         return response()->json([
