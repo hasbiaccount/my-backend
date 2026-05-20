@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EventParticipant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
@@ -102,5 +104,89 @@ class CartController extends Controller
             'success' => true,
             'message' => 'Cart item removed successfully',
         ]);
+    }
+
+    public function checkout(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $result = DB::transaction(function () use ($user) {
+            $carts = $user->carts()->lockForUpdate()->with('event')->get();
+
+            if ($carts->isEmpty()) {
+                return ['empty' => true];
+            }
+
+            $enrolled = [];
+            $skipped = [];
+            $now = now();
+
+            foreach ($carts as $cart) {
+                $event = $cart->event;
+                if (!$event) {
+                    $skipped[] = ['event_id' => $cart->event_id, 'reason' => 'Event no longer exists'];
+                    continue;
+                }
+
+                if ($event->participants()->where('user_id', $user->id)->exists()) {
+                    $skipped[] = ['event_id' => $event->id, 'reason' => 'Already enrolled'];
+                    continue;
+                }
+
+                if ($event->registration_open && $now->lt($event->registration_open)) {
+                    $skipped[] = ['event_id' => $event->id, 'reason' => 'Registration has not opened'];
+                    continue;
+                }
+
+                if ($event->registration_deadline && $now->gt($event->registration_deadline)) {
+                    $skipped[] = ['event_id' => $event->id, 'reason' => 'Registration has closed'];
+                    continue;
+                }
+
+                if ($event->max_participants > 0) {
+                    $current = $event->participants()->whereIn('status', ['registered', 'attended'])->count();
+                    if ($current >= $event->max_participants) {
+                        $skipped[] = ['event_id' => $event->id, 'reason' => 'Maximum participants reached'];
+                        continue;
+                    }
+                }
+
+                $participant = $event->participants()->create([
+                    'user_id' => $user->id,
+                    'status' => 'registered',
+                    'unique_code' => $this->generateUniqueCode($event),
+                ]);
+                $enrolled[] = $participant;
+            }
+
+            $user->carts()->delete();
+
+            return ['enrolled' => $enrolled, 'skipped' => $skipped];
+        });
+
+        if (!empty($result['empty'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cart is empty',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Checkout completed',
+            'data' => [
+                'enrolled' => $result['enrolled'],
+                'skipped' => $result['skipped'],
+            ],
+        ]);
+    }
+
+    private function generateUniqueCode($event): string
+    {
+        do {
+            $code = strtoupper(Str::random(4));
+        } while (EventParticipant::where('event_id', $event->id)->where('unique_code', $code)->exists());
+
+        return $code;
     }
 }
