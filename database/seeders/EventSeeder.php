@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,7 +22,7 @@ class EventSeeder extends Seeder
         }
 
         // If users with role 'organizer' are seeded, assign them as organizer_id
-        $users = User::all()->filter(fn($user) => $user->hasRole('organizer'));
+        $users = User::role('organizer')->get();
 
         // Check if there is ANY user with role 'organizer'
         if ($users->isEmpty()) {
@@ -29,11 +30,25 @@ class EventSeeder extends Seeder
             return;
         }
 
+        $categories = Category::all();
+
+        if ($categories->isEmpty()) {
+            $this->command->warn('No categories found. Please run CategorySeeder first.');
+            return;
+        }
+
         // Create 50 events with random users with role 'organizer'
-        for ($i = 0; $i < 50; $i++) {
-            Event::factory()->create([
+        for ($i = 1; $i <= 50; $i++) {
+            $event = Event::factory()->raw([
+                'title' => "Campus Hub Event {$i}",
                 'organizer_id' => $users->random()->id,
+                'category_id' => $categories->random()->id,
             ]);
+
+            Event::updateOrCreate(
+                ['title' => $event['title']],
+                $event,
+            );
         }
     }
 }

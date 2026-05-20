@@ -93,4 +93,5 @@ class EventLinkController extends Controller
             'message' => 'Event link deleted successfully',
         ]);
     }
+
 }

@@ -20,33 +20,36 @@ class PermissionSeeder extends Seeder
         // Reset Cached Permission BEFORE Seeding
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+        $guard = 'api';
+
         // Roles
-        $adminRole = Role::create(['name' => 'admin']);
-        $organizerRole = Role::create(['name' => 'organizer']);
-        $userRole = Role::create(['name' => 'user']);
+        $adminRole = Role::updateOrCreate(['name' => 'admin', 'guard_name' => $guard]);
+        $organizerRole = Role::updateOrCreate(['name' => 'organizer', 'guard_name' => $guard]);
+        $userRole = Role::updateOrCreate(['name' => 'user', 'guard_name' => $guard]);
 
-        // Events Table Permissions
-        Permission::create(['name' => 'create events']);
-        Permission::create(['name' => 'update events']);
-        Permission::create(['name' => 'delete events']);
+        $permissions = [
+            'create events',
+            'update events',
+            'delete events',
+            'create categories',
+            'update categories',
+            'delete categories',
+            'enroll events',
+            'manage participants',
+        ];
 
-        // Category Table Permissions
-        Permission::create(['name' => 'create categories']);
-        Permission::create(['name' => 'update categories']);
-        Permission::create(['name' => 'delete categories']);
-
-        // Enrollment Permissions
-        Permission::create(['name' => 'enroll events']);
-        Permission::create(['name' => 'manage participants']);
+        foreach ($permissions as $permission) {
+            Permission::updateOrCreate(['name' => $permission, 'guard_name' => $guard]);
+        }
 
         // Reset Cached Permission AFTER Seeding (due to WithoutModelEvents Trait)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Assign Admin Permissions
-        $adminRole->givePermissionTo(Permission::all());
+        $adminRole->syncPermissions($permissions);
         
         // Assign Organizer Permissions
-        $organizerRole->givePermissionTo([
+        $organizerRole->syncPermissions([
             'create events',
             'update events',
             'delete events',
@@ -55,7 +58,7 @@ class PermissionSeeder extends Seeder
         ]);
 
         // Assign User Permissions
-        $userRole->givePermissionTo([
+        $userRole->syncPermissions([
             'enroll events',
         ]);
     }

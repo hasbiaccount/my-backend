@@ -12,7 +12,6 @@ class EventLinkSeeder extends Seeder
     public function run(): void
     {
         $now = Carbon::now();
-        $rows = [];
 
         foreach (Event::query()->select('id')->cursor() as $event) {
             $templates = [
@@ -28,19 +27,16 @@ class EventLinkSeeder extends Seeder
             ];
 
             foreach ($templates as [$title, $url]) {
-                $rows[] = [
-                    'event_id' => $event->id,
-                    'title' => $title,
-                    'url' => $url,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-        }
-
-        if (!empty($rows)) {
-            foreach (array_chunk($rows, 500) as $chunk) {
-                EventLink::insert($chunk);
+                EventLink::updateOrCreate(
+                    [
+                        'event_id' => $event->id,
+                        'title' => $title,
+                    ],
+                    [
+                        'url' => $url,
+                        'updated_at' => $now,
+                    ],
+                );
             }
         }
     }
