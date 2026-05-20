@@ -2,6 +2,7 @@
 
 use App\Models\Category;
 use App\Models\User;
+use Database\Seeders\CategorySeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\UserSeeder;
 
@@ -145,4 +146,23 @@ test('admins can delete categories', function () {
     $this->assertDatabaseMissing('categories', [
         'id' => $category->id,
     ]);
+});
+
+test('category seeder creates default campus event categories', function () {
+    $this->seed(CategorySeeder::class);
+    $this->seed(CategorySeeder::class);
+
+    $this->assertDatabaseHas('categories', [
+        'name' => 'Seminar',
+        'slug' => 'seminar',
+        'description' => 'Academic seminar events and guest lectures.',
+    ]);
+
+    $this->assertDatabaseHas('categories', [
+        'name' => 'Volunteer',
+        'slug' => 'volunteer',
+        'description' => 'Community service and volunteer opportunities.',
+    ]);
+
+    expect(Category::count())->toBe(8);
 });
