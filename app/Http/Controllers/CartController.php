@@ -2,30 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cart;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class CartController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $carts = $request->user()->carts()->with('event')->get();
+        $carts = $request->user()
+            ->carts()
+            ->with('event:id,title,start_date,end_date,location,registration_fee')
+            ->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'Daftar cart acara',
-            'data' => $carts
+            'message' => 'Cart retrieved successfully',
+            'data' => $carts,
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'event_id' => 'required|exists:events,id',
@@ -35,36 +33,27 @@ class CartController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $user = $request->user();
-        
-        $cart = $user->carts()->where('event_id', $request->event_id)->first();
-
-        if ($cart) {
-            $cart->quantity += $request->quantity;
+        $cart = DB::transaction(function () use ($request) {
+            $cart = $request->user()->carts()->lockForUpdate()
+                ->firstOrNew(['event_id' => $request->event_id]);
+            $cart->quantity = ($cart->exists ? $cart->quantity : 0) + (int) $request->quantity;
             $cart->save();
-        } else {
-            $cart = $user->carts()->create([
-                'event_id' => $request->event_id,
-                'quantity' => $request->quantity
-            ]);
-        }
+            return $cart;
+        });
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil menambahkan acara ke cart',
-            'data' => $cart
+            'message' => 'Event added to cart',
+            'data' => $cart->load('event:id,title,start_date,end_date,location,registration_fee'),
         ], 201);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'quantity' => 'required|integer|min:1',
@@ -73,8 +62,8 @@ class CartController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -83,32 +72,27 @@ class CartController extends Controller
         if (!$cart) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cart not found'
+                'message' => 'Cart item not found',
             ], 404);
         }
 
-        $cart->update([
-            'quantity' => $request->quantity
-        ]);
+        $cart->update(['quantity' => $request->quantity]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Quantity berhasil diupdate',
-            'data' => $cart
+            'message' => 'Cart item updated successfully',
+            'data' => $cart,
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Request $request, string $id)
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $cart = $request->user()->carts()->find($id);
 
         if (!$cart) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cart not found'
+                'message' => 'Cart item not found',
             ], 404);
         }
 
@@ -116,7 +100,7 @@ class CartController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil menghapus acara dari cart'
+            'message' => 'Cart item removed successfully',
         ]);
     }
 }

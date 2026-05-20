@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ParticipantSeeder extends Seeder
 {
@@ -31,6 +32,7 @@ class ParticipantSeeder extends Seeder
                 $user->participants()->create([
                     'event_id' => $event->id,
                     'status' => 'registered',
+                    'unique_code' => strtoupper(Str::random(4)),
                 ]);
             });
         }

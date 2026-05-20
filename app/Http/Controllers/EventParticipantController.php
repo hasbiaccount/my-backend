@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\EventParticipant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EventParticipantController extends Controller
@@ -33,8 +34,8 @@ class EventParticipantController extends Controller
         }
 
         if ($event->max_participants > 0) {
-            $confirmed = $event->participants()->where('status', 'confirmed')->count();
-            if ($confirmed >= $event->max_participants) {
+            $current = $event->participants()->whereIn('status', ['registered', 'attended'])->count();
+            if ($current >= $event->max_participants) {
                 return response()->json([
                     'success' => false,
                     'message' => 'This event has reached its maximum participants',
@@ -59,6 +60,7 @@ class EventParticipantController extends Controller
         $participant = $event->participants()->create([
             'user_id' => $user->id,
             'status' => 'registered',
+            'unique_code' => $this->generateUniqueCode($event),
         ]);
 
         return response()->json([
@@ -99,8 +101,8 @@ class EventParticipantController extends Controller
 
         $allowedTransitions = [
             'registered' => ['attended', 'absent'],
-            'attended'   => [],
-            'absent'     => [],
+            'attended' => [],
+            'absent' => [],
         ];
 
         if (!in_array($validated['status'], $allowedTransitions[$participant->status], true)) {
@@ -144,12 +146,87 @@ class EventParticipantController extends Controller
 
     public function myEvents(Request $request): JsonResponse
     {
-        $participants = $request->user()->participants()->with('event')->get();
+        $participants = $request->user()
+            ->participants()
+            ->with('event.category:id,name,slug')
+            ->get();
 
         return response()->json([
             'success' => true,
             'message' => 'Enrolled events retrieved successfully',
             'data' => $participants,
         ]);
+    }
+
+    public function myCode(Request $request, Event $event): JsonResponse
+    {
+        $participant = $event->participants()
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not enrolled in this event',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Unique code retrieved successfully',
+            'data' => [
+                'unique_code' => $participant->unique_code,
+                'status' => $participant->status,
+            ],
+        ]);
+    }
+
+    public function checkIn(Request $request, Event $event): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|size:4',
+        ]);
+
+        $participant = $event->participants()
+            ->where('unique_code', strtoupper($validated['code']))
+            ->first();
+
+        if (!$participant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid check-in code',
+            ], 404);
+        }
+
+        if ($participant->status === 'attended') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Participant has already checked in',
+            ], 409);
+        }
+
+        if ($participant->status !== 'registered') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Participant cannot be checked in from current status',
+            ], 422);
+        }
+
+        $participant->update(['status' => 'attended']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-in successful',
+            'data' => $participant->load('user:id,name,email'),
+        ]);
+    }
+
+    protected function generateUniqueCode(Event $event): string
+    {
+        do {
+            $code = strtoupper(Str::random(4));
+        } while ($event->participants()->where('unique_code', $code)->exists());
+
+        return $code;
     }
 }
