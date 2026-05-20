@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'organizer_id',
+    'category_id',
     'title',
     'description',
     'start_date',
@@ -34,16 +35,21 @@ class Event extends Model
         return $this->belongsTo(User::class, 'organizer_id');
     }
 
-    public function cartAcaras(): HasMany
+    public function category(): BelongsTo
     {
-        return $this->hasMany(CartAcara::class);
+        return $this->belongsTo(Category::class);
+    }
+
+    public function carts(): HasMany
+    {
+        return $this->hasMany(Cart::class);
     }
 
     public function participants(): HasMany
     {
         return $this->hasMany(EventParticipant::class);
     }
-     
+
     public function eventLinks(): HasMany
     {
         return $this->hasMany(EventLink::class);

@@ -15,13 +15,14 @@ beforeEach(function () {
 });
 
 test('public users can list events', function () {
-    $event = Event::first();
+    $event = Event::latest()->first();
 
     $response = $this->getJson('/api/events');
 
     $response->assertOk()
-        ->assertJsonPath('0.title', $event->title)
-        ->assertJsonPath('0.location', $event->location);
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.0.title', $event->title)
+        ->assertJsonPath('data.0.location', $event->location);
 });
 
 test('public users can view an event', function () {
@@ -30,8 +31,9 @@ test('public users can view an event', function () {
     $response = $this->getJson("/api/events/{$event->id}");
 
     $response->assertOk()
-        ->assertJsonPath('title', $event->title)
-        ->assertJsonPath('description', $event->description);
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.title', $event->title)
+        ->assertJsonPath('data.description', $event->description);
 });
 
 test('public users cannot create events', function () {
@@ -71,8 +73,9 @@ test('organizers can create events', function () {
     ]);
 
     $response->assertCreated()
-        ->assertJsonPath('title', 'New Event')
-        ->assertJsonPath('location', 'Online');
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.title', 'New Event')
+        ->assertJsonPath('data.location', 'Online');
 
     $this->assertDatabaseHas('events', [
         'title' => 'New Event',
@@ -90,8 +93,9 @@ test('organizers can update events', function () {
     ]);
 
     $response->assertOk()
-        ->assertJsonPath('title', 'Updated Workshop')
-        ->assertJsonPath('location', 'Room 202');
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.title', 'Updated Workshop')
+        ->assertJsonPath('data.location', 'Room 202');
 
     $this->assertDatabaseHas('events', [
         'id' => $event->id,
@@ -107,6 +111,7 @@ test('organizers can delete events', function () {
     $response = $this->actingAs($organizer, 'api')->deleteJson("/api/events/{$event->id}");
 
     $response->assertOk()
+        ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Event deleted successfully');
 
     $this->assertDatabaseMissing('events', [
