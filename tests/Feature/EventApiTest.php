@@ -2,6 +2,7 @@
 
 use App\Models\Event;
 use App\Models\User;
+use Database\Seeders\CategorySeeder;
 use Database\Seeders\EventSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\UserSeeder;
@@ -10,6 +11,7 @@ beforeEach(function () {
     $this->seed([
         PermissionSeeder::class,
         UserSeeder::class,
+        CategorySeeder::class,
         EventSeeder::class,
     ]);
 });
@@ -60,11 +62,11 @@ test('regular users cannot write events', function () {
         ->assertForbidden();
 });
 
-test('organizers can create events', function () {
-    $organizer = User::where('email', 'organizer@example.com')->first();
+test('admins can create events', function () {
+    $admin = User::where('email', 'organizer@example.com')->first();
 
-    $response = $this->actingAs($organizer, 'api')->postJson('/api/events', [
-        'organizer_id' => $organizer->id,
+    $response = $this->actingAs($admin, 'api')->postJson('/api/events', [
+        'organizer_id' => $admin->id,
         'title' => 'New Event',
         'description' => 'A completely new event',
         'start_date' => now()->addDays(10)->toDateString(),
@@ -83,11 +85,11 @@ test('organizers can create events', function () {
     ]);
 });
 
-test('organizers can update events', function () {
-    $organizer = User::where('email', 'organizer@example.com')->first();
+test('admins can update events', function () {
+    $admin = User::where('email', 'organizer@example.com')->first();
     $event = Event::first();
 
-    $response = $this->actingAs($organizer, 'api')->patchJson("/api/events/{$event->id}", [
+    $response = $this->actingAs($admin, 'api')->patchJson("/api/events/{$event->id}", [
         'title' => 'Updated Workshop',
         'location' => 'Room 202',
     ]);
@@ -104,11 +106,11 @@ test('organizers can update events', function () {
     ]);
 });
 
-test('organizers can delete events', function () {
-    $organizer = User::where('email', 'organizer@example.com')->first();
+test('admins can delete events', function () {
+    $admin = User::where('email', 'organizer@example.com')->first();
     $event = Event::first();
 
-    $response = $this->actingAs($organizer, 'api')->deleteJson("/api/events/{$event->id}");
+    $response = $this->actingAs($admin, 'api')->deleteJson("/api/events/{$event->id}");
 
     $response->assertOk()
         ->assertJsonPath('success', true)

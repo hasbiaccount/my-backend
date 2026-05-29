@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\EventParticipant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,11 @@ class EventParticipantController extends Controller
     {
         $user = $request->user();
 
-        if ($event->participants()->where('user_id', $user->id)->exists()) {
+        $existingParticipant = $event->participants()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existingParticipant && $existingParticipant->status !== 'cancelled') {
             return response()->json([
                 'success' => false,
                 'message' => 'You are already enrolled in this event',
@@ -57,17 +62,35 @@ class EventParticipantController extends Controller
             ], 422);
         }
 
-        $participant = $event->participants()->create([
-            'user_id' => $user->id,
-            'status' => 'registered',
-            'unique_code' => $this->generateUniqueCode($event),
-        ]);
+        $participant = DB::transaction(function () use ($event, $user) {
+            $existingParticipant = $event->participants()
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingParticipant && $existingParticipant->status === 'cancelled') {
+                $existingParticipant->update([
+                    'status' => 'registered',
+                    'unique_code' => $this->generateUniqueCode($event),
+                    'cancelled_at' => null,
+                ]);
+
+                return $existingParticipant->fresh();
+            }
+
+            return $event->participants()->create([
+                'user_id' => $user->id,
+                'status' => 'registered',
+                'unique_code' => $this->generateUniqueCode($event),
+                'cancelled_at' => null,
+            ]);
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Successfully enrolled in event',
             'data' => $participant,
-        ], 201);
+        ], $existingParticipant ? 200 : 201);
     }
 
     public function show(Event $event, EventParticipant $participant): JsonResponse
@@ -96,13 +119,14 @@ class EventParticipantController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(['registered', 'attended', 'absent'])],
+            'status' => ['required', Rule::in(['attended'])],
         ]);
 
         $allowedTransitions = [
-            'registered' => ['attended', 'absent'],
+            'registered' => ['attended'],
             'attended' => [],
             'absent' => [],
+            'cancelled' => [],
         ];
 
         if (!in_array($validated['status'], $allowedTransitions[$participant->status], true)) {
@@ -135,12 +159,31 @@ class EventParticipantController extends Controller
             ], 404);
         }
 
-        $participant->delete();
+        if ($participant->status === 'cancelled') {
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration already cancelled',
+                'data' => $participant,
+            ]);
+        }
+
+        if ($participant->status !== 'registered') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only registered participants can cancel registration',
+            ], 422);
+        }
+
+        $participant->update([
+            'status' => 'cancelled',
+            'unique_code' => null,
+            'cancelled_at' => now(),
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Successfully unenrolled from event',
-            'data' => null,
+            'message' => 'Successfully cancelled registration',
+            'data' => $participant->fresh(),
         ]);
     }
 

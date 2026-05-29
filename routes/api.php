@@ -43,7 +43,7 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])
         ->middleware('permission:delete categories');
 
-    // Events (organizer / admin)
+    // Events (admin)
     Route::get('/events/me/organized', [EventController::class, 'myOrganized']);
     Route::post('/events', [EventController::class, 'store'])
         ->middleware('permission:create events');

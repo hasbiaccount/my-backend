@@ -28,7 +28,7 @@ class EventSeeder extends Seeder
 
         // Check if there is ANY user with role 'admin'
         if ($users->isEmpty()) {
-            $this->command->warn('No admin/organizer users found. Please run UserSeeder first.');
+            $this->command->warn('No admin users found. Please run UserSeeder first.');
             return;
         }
 

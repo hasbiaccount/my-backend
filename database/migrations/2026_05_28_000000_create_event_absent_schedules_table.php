@@ -8,19 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('event_participants', function (Blueprint $table) {
+        Schema::create('event_absent_schedules', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
-            $table->enum('status', ['registered', 'attended', 'absent', 'cancelled'])->default('registered');
+            $table->dateTime('run_at')->index();
+            $table->dateTime('processed_at')->nullable()->index();
+            $table->dateTime('cancelled_at')->nullable()->index();
             $table->timestamps();
 
-            $table->unique(['user_id', 'event_id']);
+            $table->unique('event_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('event_participants');
+        Schema::dropIfExists('event_absent_schedules');
     }
 };

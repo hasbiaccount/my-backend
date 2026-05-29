@@ -69,7 +69,7 @@ class EventController extends Controller
         }
 
         $validated = $validator->validated();
-        // Always free — ensure no fee stored
+        // Always free.
         $validated['registration_fee'] = 0;
 
         $event = Event::create([
@@ -81,6 +81,8 @@ class EventController extends Controller
         if ($request->hasFile('image')) {
             $this->storeImage($event, $request->file('image'));
         }
+
+        $this->syncAbsentSchedule($event->refresh());
 
         return response()->json([
             'success' => true,
@@ -126,7 +128,7 @@ class EventController extends Controller
         }
 
         $validated = $validator->validated();
-        // Always free
+        // Always free.
         $validated['registration_fee'] = 0;
 
         $event->update($validated);
@@ -141,6 +143,8 @@ class EventController extends Controller
             $this->storeImage($event, $request->file('image'));
         }
 
+        $this->syncAbsentSchedule($event->refresh());
+
         return response()->json([
             'success' => true,
             'message' => 'Event updated successfully',
@@ -150,6 +154,8 @@ class EventController extends Controller
 
     public function destroy(Event $event): JsonResponse
     {
+        $event->absentSchedule()->delete();
+
         // Delete associated images from storage
         foreach ($event->images as $img) {
             Storage::disk('public')->delete($img->path);
@@ -184,5 +190,22 @@ class EventController extends Controller
             'event_id' => $event->id,
             'path'     => $path,
         ]);
+    }
+
+    private function syncAbsentSchedule(Event $event): void
+    {
+        $schedule = $event->absentSchedule()->first();
+
+        if ($schedule?->processed_at) {
+            return;
+        }
+
+        $event->absentSchedule()->updateOrCreate(
+            ['event_id' => $event->id],
+            [
+                'run_at' => $event->end_date,
+                'cancelled_at' => null,
+            ],
+        );
     }
 }

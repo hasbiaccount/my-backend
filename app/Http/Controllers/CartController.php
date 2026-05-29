@@ -128,7 +128,12 @@ class CartController extends Controller
                     continue;
                 }
 
-                if ($event->participants()->where('user_id', $user->id)->exists()) {
+                $participant = $event->participants()
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($participant && $participant->status !== 'cancelled') {
                     $skipped[] = ['event_id' => $event->id, 'reason' => 'Already enrolled'];
                     continue;
                 }
@@ -151,12 +156,23 @@ class CartController extends Controller
                     }
                 }
 
-                $participant = $event->participants()->create([
+                if ($participant) {
+                    $participant->update([
+                        'status' => 'registered',
+                        'unique_code' => $this->generateUniqueCode($event),
+                        'cancelled_at' => null,
+                    ]);
+
+                    $enrolled[] = $participant->fresh();
+                    continue;
+                }
+
+                $enrolled[] = $event->participants()->create([
                     'user_id' => $user->id,
                     'status' => 'registered',
                     'unique_code' => $this->generateUniqueCode($event),
+                    'cancelled_at' => null,
                 ]);
-                $enrolled[] = $participant;
             }
 
             $user->carts()->delete();
