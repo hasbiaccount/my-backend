@@ -6,8 +6,8 @@ use App\Models\Event;
 use App\Models\EventParticipant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EventParticipantController extends Controller
@@ -27,27 +27,6 @@ class EventParticipantController extends Controller
     {
         $user = $request->user();
 
-        $existingParticipant = $event->participants()
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($existingParticipant && $existingParticipant->status !== 'cancelled') {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are already enrolled in this event',
-            ], 409);
-        }
-
-        if ($event->max_participants > 0) {
-            $current = $event->participants()->whereIn('status', ['registered', 'attended'])->count();
-            if ($current >= $event->max_participants) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This event has reached its maximum participants',
-                ], 422);
-            }
-        }
-
         if ($event->registration_open && now()->lt($event->registration_open)) {
             return response()->json([
                 'success' => false,
@@ -55,42 +34,71 @@ class EventParticipantController extends Controller
             ], 422);
         }
 
-        if ($event->registration_deadline && now()->gt($event->registration_deadline)) {
+        if ($event->registration_deadline && now()->gt(Carbon::parse($event->registration_deadline)->endOfDay())) {
             return response()->json([
                 'success' => false,
                 'message' => 'Registration for this event has closed',
             ], 422);
         }
 
-        $participant = DB::transaction(function () use ($event, $user) {
+        $result = DB::transaction(function () use ($event, $user) {
+            // Serialize concurrent enrollments for this event so the capacity
+            // check and the insert cannot interleave.
+            Event::whereKey($event->id)->lockForUpdate()->first();
+
             $existingParticipant = $event->participants()
                 ->where('user_id', $user->id)
                 ->lockForUpdate()
                 ->first();
 
+            if ($existingParticipant && $existingParticipant->status !== 'cancelled') {
+                return ['outcome' => 'already_enrolled'];
+            }
+
+            if ($event->max_participants > 0) {
+                $current = $event->participants()->whereIn('status', ['registered', 'attended'])->count();
+                if ($current >= $event->max_participants) {
+                    return ['outcome' => 'full'];
+                }
+            }
+
             if ($existingParticipant && $existingParticipant->status === 'cancelled') {
                 $existingParticipant->update([
                     'status' => 'registered',
-                    'unique_code' => $this->generateUniqueCode($event),
+                    'unique_code' => EventParticipant::generateUniqueCode($event),
                     'cancelled_at' => null,
                 ]);
 
-                return $existingParticipant->fresh();
+                return ['outcome' => 'reenrolled', 'participant' => $existingParticipant->fresh()];
             }
 
-            return $event->participants()->create([
+            return ['outcome' => 'created', 'participant' => $event->participants()->create([
                 'user_id' => $user->id,
                 'status' => 'registered',
-                'unique_code' => $this->generateUniqueCode($event),
+                'unique_code' => EventParticipant::generateUniqueCode($event),
                 'cancelled_at' => null,
-            ]);
+            ])];
         });
+
+        if ($result['outcome'] === 'already_enrolled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are already enrolled in this event',
+            ], 409);
+        }
+
+        if ($result['outcome'] === 'full') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This event has reached its maximum participants',
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Successfully enrolled in event',
-            'data' => $participant,
-        ], $existingParticipant ? 200 : 201);
+            'data' => $result['participant'],
+        ], $result['outcome'] === 'reenrolled' ? 200 : 201);
     }
 
     public function show(Event $event, EventParticipant $participant): JsonResponse
@@ -262,14 +270,5 @@ class EventParticipantController extends Controller
             'message' => 'Check-in successful',
             'data' => $participant->load('user:id,name,email'),
         ]);
-    }
-
-    protected function generateUniqueCode(Event $event): string
-    {
-        do {
-            $code = strtoupper(Str::random(4));
-        } while ($event->participants()->where('unique_code', $code)->exists());
-
-        return $code;
     }
 }

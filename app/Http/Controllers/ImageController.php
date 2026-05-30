@@ -33,14 +33,7 @@ class ImageController extends Controller
 
     public function upload(Request $request, string $eventId)
     {
-        $event = Event::findOrFail($eventId);
-
-        if (!$event) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Event not found'
-            ], 404);
-        }
+        Event::findOrFail($eventId);
 
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',

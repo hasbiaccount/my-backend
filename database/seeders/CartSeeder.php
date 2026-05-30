@@ -35,15 +35,10 @@ class CartSeeder extends Seeder
             $randomEvents = $availableEvents->take(min(2, $availableEvents->count()));
             
             foreach ($randomEvents as $event) {
-                Cart::updateOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'event_id' => $event->id,
-                    ],
-                    [
-                        'quantity' => 1,
-                    ],
-                );
+                Cart::firstOrCreate([
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                ]);
             }
         }
     }

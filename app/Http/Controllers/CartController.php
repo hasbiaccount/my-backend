@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\EventParticipant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
@@ -29,7 +29,6 @@ class CartController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'event_id' => 'required|exists:events,id',
-            'quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -41,11 +40,8 @@ class CartController extends Controller
         }
 
         $cart = DB::transaction(function () use ($request) {
-            $cart = $request->user()->carts()->lockForUpdate()
-                ->firstOrNew(['event_id' => $request->event_id]);
-            $cart->quantity = ($cart->exists ? $cart->quantity : 0) + (int) $request->quantity;
-            $cart->save();
-            return $cart;
+            return $request->user()->carts()->lockForUpdate()
+                ->firstOrCreate(['event_id' => $request->event_id]);
         });
 
         return response()->json([
@@ -53,38 +49,6 @@ class CartController extends Controller
             'message' => 'Event added to cart',
             'data' => $cart->load('event:id,title,start_date,end_date,location,registration_fee'),
         ], 201);
-    }
-
-    public function update(Request $request, string $id): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'quantity' => 'required|integer|min:1',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $cart = $request->user()->carts()->find($id);
-
-        if (!$cart) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart item not found',
-            ], 404);
-        }
-
-        $cart->update(['quantity' => $request->quantity]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cart item updated successfully',
-            'data' => $cart,
-        ]);
     }
 
     public function destroy(Request $request, string $id): JsonResponse
@@ -143,7 +107,7 @@ class CartController extends Controller
                     continue;
                 }
 
-                if ($event->registration_deadline && $now->gt($event->registration_deadline)) {
+                if ($event->registration_deadline && $now->gt(Carbon::parse($event->registration_deadline)->endOfDay())) {
                     $skipped[] = ['event_id' => $event->id, 'reason' => 'Registration has closed'];
                     continue;
                 }
@@ -159,7 +123,7 @@ class CartController extends Controller
                 if ($participant) {
                     $participant->update([
                         'status' => 'registered',
-                        'unique_code' => $this->generateUniqueCode($event),
+                        'unique_code' => EventParticipant::generateUniqueCode($event),
                         'cancelled_at' => null,
                     ]);
 
@@ -170,7 +134,7 @@ class CartController extends Controller
                 $enrolled[] = $event->participants()->create([
                     'user_id' => $user->id,
                     'status' => 'registered',
-                    'unique_code' => $this->generateUniqueCode($event),
+                    'unique_code' => EventParticipant::generateUniqueCode($event),
                     'cancelled_at' => null,
                 ]);
             }
@@ -195,14 +159,5 @@ class CartController extends Controller
                 'skipped' => $result['skipped'],
             ],
         ]);
-    }
-
-    private function generateUniqueCode($event): string
-    {
-        do {
-            $code = strtoupper(Str::random(4));
-        } while (EventParticipant::where('event_id', $event->id)->where('unique_code', $code)->exists());
-
-        return $code;
     }
 }
