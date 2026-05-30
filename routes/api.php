@@ -70,7 +70,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/carts', [CartController::class, 'index']);
     Route::post('/carts', [CartController::class, 'store']);
     Route::post('/carts/checkout', [CartController::class, 'checkout']);
-    Route::match(['put', 'patch'], '/carts/{cart}', [CartController::class, 'update']);
     Route::delete('/carts/{cart}', [CartController::class, 'destroy']);
 
     // Participant routes
